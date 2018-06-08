@@ -6,6 +6,7 @@ Usage: q_iteration(env, gamma=discount factor, ent_wt= entropy bonus)
 import numpy as np
 from scipy.misc import logsumexp as sp_lse
 
+
 def softmax(q, alpha=1.0):
     q = (1.0/alpha)*q
     q = q-np.max(q)
@@ -13,8 +14,10 @@ def softmax(q, alpha=1.0):
     probs = probs/np.sum(probs)
     return probs
 
+
 def logsumexp(q, alpha=1.0, axis=1):
     return alpha*sp_lse((1.0/alpha)*q, axis=axis)
+
 
 def get_policy(q_fn, ent_wt=1.0):
     """
@@ -25,6 +28,7 @@ def get_policy(q_fn, ent_wt=1.0):
     pol_probs = np.exp((1.0/ent_wt)*adv_rew)
     assert np.all(np.isclose(np.sum(pol_probs, axis=1), 1.0)), str(pol_probs)
     return pol_probs
+
 
 def q_iteration(env, reward_matrix=None, K=50, gamma=0.99, ent_wt=0.1, warmstart_q=None, policy=None):
     """

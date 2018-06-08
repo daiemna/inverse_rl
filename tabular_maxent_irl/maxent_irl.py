@@ -8,9 +8,13 @@ Simply call tabular_maxent_irl(env, expert_visitations)
 """
 import numpy as np
 from utils import one_hot_to_flat, flat_to_one_hot
-from q_iteration import q_iteration, logsumexp, get_policy
+from q_iteration import q_iteration, get_policy
 from utils import TrainingIterator
-from utils import gd_momentum_optimizer, adam_optimizer
+from utils import adam_optimizer
+from pylogging import setup_logger, HandlerType
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def compute_visitation(env, q_fn, ent_wt=1.0, T=50, discount=1.0):
@@ -24,7 +28,7 @@ def compute_visitation(env, q_fn, ent_wt=1.0, T=50, discount=1.0):
 
     for i in range(T):
         sa_visit = state_visitation * pol_probs
-        sa_visit_t[:,:,i] = sa_visit #(discount**i) * sa_visit
+        sa_visit_t[:, :, i] = sa_visit  # (discount**i) * sa_visit
         # sum-out (SA)S
         new_state_visitation = np.einsum('ij,ijk->k', sa_visit, t_matrix)
         state_visitation = np.expand_dims(new_state_visitation, axis=1)
@@ -79,11 +83,11 @@ def tabular_maxent_irl(env, demo_visitations, num_itrs=50, ent_wt=1.0, lr=1e-3, 
     update = adam_optimizer(lr)
 
     for it in TrainingIterator(num_itrs, heartbeat=1.0):
-        q_itrs = 20 if it.itr>5 else 100
-        ### compute policy in closed form
+        q_itrs = 20 if it.itr > 5 else 100
+        # compute policy in closed form
         q_rew = q_iteration(env, reward_matrix=reward_fn, ent_wt=ent_wt, warmstart_q=q_rew, K=q_itrs, gamma=discount)
 
-        ### update reward
+        # update reward
         # need to count how often the policy will visit a particular (s, a) pair
         pol_visitations = compute_visitation(env, q_rew, ent_wt=ent_wt, T=T, discount=discount)
 
@@ -94,16 +98,18 @@ def tabular_maxent_irl(env, demo_visitations, num_itrs=50, ent_wt=1.0, lr=1e-3, 
         reward_fn = update(reward_fn, grad)
 
         if it.heartbeat:
-            print(it.itr_message())
-            print('\tVisitationError:',it.pop_mean('VisitationInfNormError'))
+            logger.info(it.itr_message())
+            logger.info('\tVisitationError:' + str(it.pop_mean('VisitationInfNormError')))
     return reward_fn, q_rew
 
 
 if __name__ == "__main__":
     # test IRL
-    from q_iteration import q_iteration
+    # from q_iteration import q_iteration
     from simple_env import random_env
-    np.set_printoptions(suppress=True)
+    # np.set_logger.infooptions(suppress=True)
+
+    setup_logger(log_directory='./logs', file_handler_type=HandlerType.ROTATING_FILE_HANDLER, allow_console_logging=True, console_log_level="INFO")
 
     # Environment parameters
     env = random_env(16, 4, seed=1, terminate=False, t_sparsity=0.8)
@@ -124,21 +130,19 @@ if __name__ == "__main__":
                                                 ent_wt=ent_wt, state_only=True,
                                                 discount=discount)
     learned_pol = get_policy(learned_q, ent_wt=ent_wt)
-
-    
+ 
     # Normalize reward (if state_only=True, reward is accurate up to a constant)
     adjusted_rew = learned_rew - np.mean(learned_rew) + np.mean(env.rew_matrix)
 
     diff_rew = np.abs(env.rew_matrix - adjusted_rew)
     diff_pol = np.abs(expert_pol - learned_pol)
-    print('----- Results State Only -----')
-    print('InfNormRewError', np.max(diff_rew))
-    print('InfNormPolicyError', np.max(diff_pol))
-    print('AvdDiffRew', np.mean(diff_rew))
-    print('AvgDiffPol', np.mean(diff_pol))
-    print('True Reward', env.rew_matrix)
-    print('Learned Reward', adjusted_rew)
-
+    logger.info('----- Results State Only -----')
+    logger.info('InfNormRewError ' + str(np.max(diff_rew)))
+    logger.info('InfNormPolicyError ' + str(np.max(diff_pol)))
+    logger.info('AvdDiffRew ' + str(np.mean(diff_rew)))
+    logger.info('AvgDiffPol ' + str(np.mean(diff_pol)))
+    logger.info('True Reward: \n' + str(env.rew_matrix))
+    logger.info('Learned Reward: \n' + str(adjusted_rew))
 
     # Run MaxEnt IRL State-Action
     learned_rew, learned_q = tabular_maxent_irl(env, true_sa_visits, lr=0.01, num_itrs=1000,
@@ -151,10 +155,10 @@ if __name__ == "__main__":
 
     diff_rew = np.abs(env.rew_matrix - adjusted_rew)
     diff_pol = np.abs(expert_pol - learned_pol)
-    print('----- Results State-Action -----')
-    print('InfNormRewError', np.max(diff_rew))
-    print('InfNormPolicyError', np.max(diff_pol))
-    print('AvdDiffRew', np.mean(diff_rew))
-    print('AvgDiffPol', np.mean(diff_pol))
-    print('True Reward', env.rew_matrix)
-    print('Learned Reward', adjusted_rew)
+    logger.info('----- Results State-Action -----')
+    logger.info('InfNormRewError ' + str(np.max(diff_rew)))
+    logger.info('InfNormPolicyError ' + str(np.max(diff_pol)))
+    logger.info('AvdDiffRew ' + str(np.mean(diff_rew)))
+    logger.info('AvgDiffPol ' + str(np.mean(diff_pol)))
+    logger.info('True Reward:\n' + str(env.rew_matrix))
+    logger.info('Learned Reward:\n' + str(adjusted_rew))

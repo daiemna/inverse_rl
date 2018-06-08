@@ -1,10 +1,10 @@
-import itertools
+# import itertools
 
-from matplotlib import cm
+# from matplotlib import cm
 
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
+# import matplotlib.pyplot as plt
+# from matplotlib.patches import Rectangle
 from rllab.envs.base import Env
 from rllab.misc import logger
 from rllab.spaces import Box
@@ -12,6 +12,7 @@ from rllab.spaces import Discrete
 
 
 from utils import flat_to_one_hot, np_seed
+
 
 class DiscreteEnv(Env):
     def __init__(self, transition_matrix, reward, init_state, terminate_on_reward=False):
@@ -25,8 +26,8 @@ class DiscreteEnv(Env):
         self.terminate_on_reward = terminate_on_reward
 
         self.__observation_space = Box(0, 1, shape=(self.nstates,))
-        #max_A = 0
-        #for trans in self.transitions:
+        # max_A = 0
+        # for trans in self.transitions:
         #    max_A = max(max_A, len(self.transitions[trans]))
         self.__action_space = Discrete(dA)
 
@@ -43,7 +44,7 @@ class DiscreteEnv(Env):
         obs = flat_to_one_hot(self.cur_state, ndim=self.nstates)
 
         done = False
-        if self.terminate_on_reward and r>0:
+        if self.terminate_on_reward and r > 0:
             done = True
         return obs, r, done, {}
 
@@ -54,15 +55,15 @@ class DiscreteEnv(Env):
         return self.reward[s, a]
 
     def log_diagnostics(self, paths):
-        #Ntraj = len(paths)
-        #acts = np.array([traj['actions'] for traj in paths])
+        # Ntraj = len(paths)
+        # acts = np.array([traj['actions'] for traj in paths])
         obs = np.array([np.sum(traj['observations'], axis=0) for traj in paths])
 
         state_count = np.sum(obs, axis=0)
-        #state_count = np.mean(state_count, axis=0)
+        # state_count = np.mean(state_count, axis=0)
         state_freq = state_count/float(np.sum(state_count))
         for state in range(self.nstates):
-            logger.record_tabular('AvgStateFreq%d'%state, state_freq[state])
+            logger.record_tabular('AvgStateFreq%d' % state, state_freq[state])
 
     @property
     def transition_matrix(self):
@@ -89,8 +90,8 @@ def random_env(Nstates, Nact, seed=None, terminate=False, t_sparsity=0.75):
     assert Nstates >= 2
     if seed is None:
         seed = 0
-    reward_state=0
-    start_state=1
+    reward_state = 0
+    start_state = 1
     with np_seed(seed):
         transition_matrix = np.random.rand(Nstates, Nact, Nstates)
         transition_matrix = np.exp(transition_matrix)
@@ -102,9 +103,9 @@ def random_env(Nstates, Nact, seed=None, terminate=False, t_sparsity=0.75):
         transition_matrix = transition_matrix/np.sum(transition_matrix, axis=2, keepdims=True)
         reward = np.zeros((Nstates, Nact))
         reward[reward_state, :] = 1.0
-        #reward = np.random.randn(Nstates,1 ) + reward
+        # reward = np.random.randn(Nstates,1 ) + reward
 
-        stable_action = seed % Nact #np.random.randint(0, Nact)
+        stable_action = seed % Nact  # np.random.randint(0, Nact)
         transition_matrix[reward_state, stable_action] = np.zeros(Nstates)
         transition_matrix[reward_state, stable_action, reward_state] = 1
     return DiscreteEnv(transition_matrix, reward=reward, init_state=start_state, terminate_on_reward=terminate)
@@ -113,8 +114,8 @@ def random_env(Nstates, Nact, seed=None, terminate=False, t_sparsity=0.75):
 if __name__ == '__main__':
     env = random_env(5, 2, seed=0)
     print(env.transitions)
-    print(env.transitions[0,0])
-    print(env.transitions[0,1])
+    print(env.transitions[0, 0])
+    print(env.transitions[0, 1])
     env.reset()
     for _ in range(100):
         print(env.step(env.action_space.sample()))
