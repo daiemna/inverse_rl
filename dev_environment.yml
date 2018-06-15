@@ -63,3 +63,4 @@ dependencies:
     - hyperopt
     - polling
     - git+https://github.com/ansrivas/pylogging.git
+    - git+https://github.com/rll/rllab.git
