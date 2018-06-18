@@ -19,15 +19,24 @@ class PendulumPID(object):
         return self._env
 
     def step(self):
-        theta = np.arccos(self._last_obs[0])
-        error = self._target - theta
+        L = 1.0
+        m = 1.0
+        g = 10.0
+
+        theta, theta_dot = np.arccos(self._last_obs[0]), self._last_obs[2] 
+
+        # taw = -L * m * g * np.sin(np.pi - theta)
+        # target_taw = -L * m * g * np.sin(np.pi - self._target)
+
+        error = -L * m * g * np.sin(theta - self._target)
+        # error = target_taw
         self._int += error
-        action = self._Kp * error + self._Ki * self._int + self._Kd * (error - self._diff) 
+        new_taw = self._Kp * error + self._Ki * self._int + self._Kd * (error - self._diff) 
+        
+        self._diff = error
 
-        self._Kd = error
+        self._last_obs, r, d, info = self._env.step([new_taw])
 
-        self._last_obs, r, d, info = self._env.step([action])
-
-        info.update({"action": action})
+        info.update({"action": new_taw})
 
         return self._last_obs, r, d, info
