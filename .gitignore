@@ -92,6 +92,7 @@ ENV/
 # Spyder project settings
 .spyderproject
 .spyproject
+logs/
 
 # Rope project settings
 .ropeproject
