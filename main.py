@@ -53,17 +53,17 @@ def main2():
     # https://github.com/openai/gym/blob/master/gym/envs/classic_control/pendulum.py
     # google: pendulum mass length speed relation
     # pid_cont = PendulumPID(0.23,  0.51,  0.28, 0.0)
-    pid_cont = PendulumPID(0.2,  0.0,  0.0, 0.0)
+    pid_cont = PendulumPID(0.1, 0.0, 0.0, 0.0)
     done = False
     i = 0
     creward = 0.0
     while not done:
         pid_cont.env.render()
         obs, reward, done, info = pid_cont.step()
-        print("theta : {0} , torueq : {1}".format(np.arccos(obs[0]), info["action"]))
+        # print("theta : {0} , torueq : {1}".format(np.arccos(obs[0]), info["action"]))
         creward += reward
         i += 1
-        time.sleep(1)
+        # time.sleep(1)
     print("cumulative reward: {0}".format(creward))
     pid_cont.env.terminate()
 
