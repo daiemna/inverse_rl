@@ -1,7 +1,7 @@
 # from sandbox.rocky.tf.algos.trpo import TRPO
 from sandbox.rocky.tf.envs.base import TfEnv
-# from rllab.envs.gym_env import GymEnv
-from gym.envs.classic_control.pendulum import PendulumEnv
+from rllab.envs.gym_env import GymEnv
+# from gym.envs.classic_control.pendulum import PendulumEnv
 import numpy as np
 import logging
 from ruamel.yaml import YAML
@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 class PendulumPID(object):
 
     def __init__(self, Kp, Ki, Kd, **kwargs):
-        # self._env = TfEnv(GymEnv('Pendulum-v0',
-        #                          record_video=kwargs.get("record_video", False),
-        #                          record_log=kwargs.get("record_log", False)))
-        self._env = PendulumEnv()
+        self._env = TfEnv(GymEnv('Pendulum-v0',
+                                 record_video=kwargs.get("record_video", False),
+                                 record_log=kwargs.get("record_log", False)))
+        # self._env = PendulumEnv()
         config_path = kwargs.get("config_path", None)
         config = {}
         if config_path is not None:
@@ -29,11 +29,12 @@ class PendulumPID(object):
         self._target = kwargs.get("target", config.get("target-angle", 0.0))
 
         self.reset(Kp, Ki, Kd)
+        print("PID init")
         
     def reset(self, Kp, Ki, Kd):
-        self._int, self._diff = 0.0, 0.0
-        self._Kp, self._Ki, self._Kd = Kp, Ki, Kd
-        self._last_obs = self._env.reset(high=np.array([3, 1]))
+        self._int, self._diff, self._Ki = 0.0, 0.0, 0.0
+        self._Kp, self._Kp_swing, self._Kd = Kp, Ki, Kd
+        self._last_obs = self._env.reset()
         self._alpha_dot_prev = self._last_obs[2]
     
     @property
@@ -43,32 +44,30 @@ class PendulumPID(object):
     def step(self):
         Ip = self._length / 2.0
         alpha, alpha_dot = np.arccos(self._last_obs[0]), self._last_obs[2]
-        alpha_dotdot = (alpha_dot - self._alpha_dot_prev)/self._dt
+        # alpha_dotdot = (alpha_dot - self._alpha_dot_prev)/self._dt
         self._alpha_dot_prev = alpha_dot
 
-        # taw_stability = (self._mass * alpha_dotdot * Ip**2) - (self._mass * np.sin(alpha) * alpha_dot * self._length**2 * 0.5) - \
-        #                 (self._mass * self._g * Ip * np.sin(alpha))
+        PE = self._mass * self._g * Ip * np.sin(alpha)
+        KE = self._mass * alpha_dot**2 * self._length**2 * 0.5
+        # INR = self._mass * alpha_dotdot * Ip**2
+        # Kp_swing = 0.02
+        
 
         if abs(alpha - self._target) > self._alpha_tol:  # swing up
-            taw_stability = (self._mass * alpha_dotdot * Ip**2) - (self._mass * alpha_dot**2 * self._length**2 * 0.5) - \
-                            (self._mass * self._g * Ip * np.sin(alpha))
-            new_taw = -np.sign(alpha_dot) * (taw_stability)
+            new_taw = self._Kp_swing * np.sign(alpha_dot) * (KE + (2 - PE))
         else:                                            # stabilization pid
-            taw_stability = (self._mass * alpha_dotdot * Ip**2) - (self._mass * alpha_dot**2 * self._length**2 * 0.5) - \
-                            (self._mass * self._g * Ip * np.sin(alpha))
-            
-            error = np.sign(alpha_dot) * taw_stability
+            error = -np.sign(alpha_dot) * (KE + PE)
             self._int += error
             new_taw = self._Kp * error + self._Ki * self._int + self._Kd * (error - self._diff)
             self._diff = error
-            logger.debug("alpha : %f" % alpha)
-            # logger.debug("alpha_dot : %f" % alpha_dot)
-            # logger.debug("alpha_dotdot : %f" % alpha_dotdot)
-            logger.debug("KE : %f" % (self._mass * alpha_dot**2 * self._length**2 * 0.5))
-            logger.debug("Inertia : %f" % (self._mass * alpha_dotdot * Ip**2))
-            logger.debug("PE : %f" % (self._mass * self._g * Ip * np.sin(alpha)))
-            logger.debug("taw : %f" % new_taw)
-            logger.debug("------------------------------------------")
+        # logger.debug("alpha : %f" % alpha)
+        # logger.debug("alpha_dot : %f" % alpha_dot)
+        # logger.debug("alpha_dotdot : %f" % alpha_dotdot)
+        # logger.debug("KE : %f" % (KE))
+        # logger.debug("Inertia : %f" % (INR))
+        # logger.debug("PE : %f" % (PE))
+        # logger.debug("taw : %f" % new_taw)
+        # logger.debug("------------------------------------------")
         self._last_obs, r, d, info = self._env.step([new_taw])
 
         info.update({"action": new_taw})
@@ -83,10 +82,15 @@ def do_experiment(pid_controller, Kp, Ki, Kd, exp_count=10):
         done = False
         
         creward = 0.0
-        while not done:
+        it = 0
+        while True:
             obs, reward, done, info = pid_controller.step()
             creward += reward
-
+            
+            if it >= 400:
+                break
+            
+            it += 1 
         avg_creward += creward
     return (avg_creward/float(exp_count))
 

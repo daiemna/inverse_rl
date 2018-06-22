@@ -93,6 +93,7 @@ ENV/
 .spyderproject
 .spyproject
 logs/
+*.dat
 
 # Rope project settings
 .ropeproject

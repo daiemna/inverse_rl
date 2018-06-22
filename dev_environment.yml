@@ -64,3 +64,4 @@ dependencies:
     - polling
     - git+https://github.com/ansrivas/pylogging.git
     - git+https://github.com/rll/rllab.git
+    - git+https://github.com/DEAP/deap@master

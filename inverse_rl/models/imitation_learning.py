@@ -12,6 +12,7 @@ LOG_REG = 1e-8
 DIST_GAUSSIAN = 'gaussian'
 DIST_CATEGORICAL = 'categorical'
 
+
 class ImitationLearning(object, metaclass=Hyperparametrized):
     def __init__(self):
         pass
@@ -92,12 +93,12 @@ class ImitationLearning(object, metaclass=Hyperparametrized):
 
     def _make_param_ops(self, vs):
         self._params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=vs.name)
-        assert len(self._params)>0
-        self._assign_plc = [tf.placeholder(tf.float32, shape=param.get_shape(), name='assign_%s'%param.name.replace('/','_').replace(':','_')) for param in self._params]
+        assert len(self._params) > 0
+        self._assign_plc = [tf.placeholder(tf.float32, shape=param.get_shape(), name='assign_%s' % param.name.replace('/','_').replace(':','_')) for param in self._params]
         self._assign_ops = [tf.assign(self._params[i], self._assign_plc[i]) for i in range(len(self._params))]
 
     def get_params(self):
-        params =  tf.get_default_session().run(self._params)
+        params = tf.get_default_session().run(self._params)
         assert len(params) == len(self._params)
         return params
 
@@ -137,7 +138,6 @@ class TrajectoryIRL(ImitationLearning):
                 actions, agent_infos = policy.get_actions(path['observations'])
                 path['agent_infos'] = agent_infos
         return self._compute_path_probs(expert_paths, insert=insert)
-
 
 
 class SingleTimestepIRL(ImitationLearning):
