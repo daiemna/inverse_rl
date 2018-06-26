@@ -2,14 +2,15 @@ import numpy as np
 from sklearn.model_selection import ParameterGrid
 import pandas as pd
 # import matplotlib.pylab as plt
-# import time
+import time
 from pylogging import setup_logger, HandlerType
 from logging import getLogger, getLevelName
 from scripts.pid_pendulum import PendulumPID, do_experiment
 
 logger = getLogger(__name__)
-
 # param 0.6  0.9  0.6
+
+
 def main():
     # setup_logger(log_directory='./logs', file_handler_type=HandlerType.ROTATING_FILE_HANDLER, allow_console_logging=True, console_log_level="DEBUG")
     min_val, max_val, stride = 0.0, 2.1, 0.1
@@ -51,7 +52,7 @@ def main():
 
 
 def main2():
-    pid_cont = PendulumPID(2.1, 0.0, 0.77884, config_path="pid_constants.yml")
+    pid_cont = PendulumPID(-2.1, 0.0, 0.9, config_path="pid_constants.yml")
     done = False
     i = 0
     creward = 0.0
@@ -60,7 +61,7 @@ def main2():
         obs, reward, done, info = pid_cont.step()
         creward += reward
         i += 1
-        # time.sleep(0.3)
+        # time.sleep(0.4)
     logger.info("cumulative reward: {0}".format(creward))
     pid_cont.env.terminate()
 

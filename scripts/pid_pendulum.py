@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class PendulumPID(object):
 
-    def __init__(self, Kp, Ki, Kd, **kwargs):
+    def __init__(self, Kp, Kd, Kp_swing, **kwargs):
         self._env = TfEnv(GymEnv('Pendulum-v0',
                                  record_video=kwargs.get("record_video", False),
                                  record_log=kwargs.get("record_log", False)))
@@ -28,12 +28,12 @@ class PendulumPID(object):
         self._g = kwargs.get("g_val", config.get("gravitation", 10.0))
         self._target = kwargs.get("target", config.get("target-angle", 0.0))
 
-        self.reset(Kp, Ki, Kd)
+        self.reset(Kp, Kd, Kp_swing)
         print("PID init")
         
-    def reset(self, Kp, Ki, Kd):
+    def reset(self, Kp, Kd, Kp_swing):
         self._int, self._diff, self._Ki = 0.0, 0.0, 0.0
-        self._Kp, self._Kp_swing, self._Kd = Kp, Ki, Kd
+        self._Kp, self._Kd, self._Kp_swing = Kp, Kd, Kp_swing
         self._last_obs = self._env.reset()
         self._alpha_dot_prev = self._last_obs[2]
     
@@ -49,25 +49,25 @@ class PendulumPID(object):
 
         PE = self._mass * self._g * Ip * np.sin(alpha)
         KE = self._mass * alpha_dot**2 * self._length**2 * 0.5
+        MAX_PE = self._mass * self._g * Ip
         # INR = self._mass * alpha_dotdot * Ip**2
         # Kp_swing = 0.02
-        
 
         if abs(alpha - self._target) > self._alpha_tol:  # swing up
-            new_taw = self._Kp_swing * np.sign(alpha_dot) * (KE + (2 - PE))
+            new_taw = self._Kp_swing * np.sign(alpha_dot) * (MAX_PE - PE)
         else:                                            # stabilization pid
-            error = -np.sign(alpha_dot) * (KE + PE)
+            error = np.sign(alpha_dot) * (KE + PE)
             self._int += error
             new_taw = self._Kp * error + self._Ki * self._int + self._Kd * (error - self._diff)
             self._diff = error
-        # logger.debug("alpha : %f" % alpha)
+        logger.debug("alpha : %f" % alpha)
         # logger.debug("alpha_dot : %f" % alpha_dot)
         # logger.debug("alpha_dotdot : %f" % alpha_dotdot)
-        # logger.debug("KE : %f" % (KE))
+        logger.debug("KE : %f" % (KE))
         # logger.debug("Inertia : %f" % (INR))
-        # logger.debug("PE : %f" % (PE))
-        # logger.debug("taw : %f" % new_taw)
-        # logger.debug("------------------------------------------")
+        logger.debug("PE : %f" % (PE))
+        logger.debug("taw : %f" % new_taw)
+        logger.debug("------------------------------------------")
         self._last_obs, r, d, info = self._env.step([new_taw])
 
         info.update({"action": new_taw})
@@ -76,23 +76,23 @@ class PendulumPID(object):
 
 
 def do_experiment(pid_controller, Kp, Ki, Kd, exp_count=10):
-    avg_creward = 0.0
+    avg_c_theta = 0.0
     for i in np.arange(exp_count):
         pid_controller.reset(Kp, Ki, Kd)
         done = False
         
-        creward = 0.0
+        c_theta = 0.0
         it = 0
         while True:
             obs, reward, done, info = pid_controller.step()
-            creward += reward
+            c_theta += np.arccos(obs[0])
             
             if it >= 400:
                 break
             
             it += 1 
-        avg_creward += creward
-    return (avg_creward/float(exp_count))
+        avg_c_theta += c_theta
+    return (avg_c_theta/float(exp_count))
 
 
 def read_yaml_file(path):

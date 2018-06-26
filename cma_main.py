@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.model_selection import ParameterGrid
 import pandas as pd
 # import matplotlib.pylab as plt
-# import time
+import time
 from pylogging import setup_logger, HandlerType
 from logging import getLogger, getLevelName
 from scripts.pid_pendulum import PendulumPID, do_experiment
@@ -18,19 +18,21 @@ def main():
     def test_on_env(params):
         return do_experiment(pid_controller, params[0], params[1], params[2])
 
-    es = cma.CMAEvolutionStrategy(3*[0.0], 0.5)
-
-    while not es.stop():
-        solutions = es.ask()
-        es.tell(solutions, [test_on_env(x) for x in solutions])
-        es.logger.add(modulo=2)  # write data to disc to be plotted
-        es.disp()
+    es = cma.CMAEvolutionStrategy([-5.0, -0.5, 0.2], 1)
+    try:
+        while not es.stop():
+            solutions = es.ask()
+            es.tell(solutions, [test_on_env(x) for x in solutions])
+            es.logger.add(modulo=2)  # write data to disc to be plotted
+            es.disp()
+    except KeyboardInterrupt as e:
+        print(e)
     es.result_pretty()
     cma.plot()
 
 
 def main2():
-    pid_cont = PendulumPID(2.1, 0.02, -0.48265, config_path="pid_constants.yml")
+    pid_cont = PendulumPID(-5.783, -0.407, 0.215, config_path="pid_constants.yml")
     done = False
     i = 0
     creward = 0.0
