@@ -21,7 +21,8 @@ class PendulumPID(object):
         if config_path is not None:
             config = read_yaml_file(config_path)
         
-        self._alpha_tol = kwargs.get("stability_region", config.get("stablity-active-region", 0.5))
+        self._alpha_tol = kwargs.get("stability_region", config.get("stablity-active-region", 0.0))
+        self._Kmag = kwargs.get("swing_up_torque", config.get("max-swing-up-torque", 1.0))
         self._dt = kwargs.get("time_delta", config.get("time-delta", 1.0))
         self._length = kwargs.get("length", config.get("length", 1.0))
         self._mass = kwargs.get("mass", config.get("mass", 1.0))
@@ -31,9 +32,10 @@ class PendulumPID(object):
         self.reset(Kp, Kd, Kp_swing)
         print("PID init")
         
-    def reset(self, Kp, Kd, Kp_swing):
+    def reset(self, Kp, Kd, Kp_swing, Kmag=1.0):
         self._int, self._diff, self._Ki = 0.0, 0.0, 0.0
         self._Kp, self._Kd, self._Kp_swing = Kp, Kd, Kp_swing
+        self._Kmag = Kmag
         self._last_obs = self._env.reset()
         self._alpha_dot_prev = self._last_obs[2]
     
@@ -55,27 +57,30 @@ class PendulumPID(object):
 
         if abs(alpha - self._target) > self._alpha_tol:  # swing up
             new_taw = self._Kp_swing * np.sign(alpha_dot) * (MAX_PE - PE)
+            # new_taw = np.sign(alpha_dot) * (self._Kmag / (1 + np.exp(-self._Kp_swing * alpha)))
+            error = alpha
         else:                                            # stabilization pid
             error = np.sign(alpha_dot) * (KE + PE)
             self._int += error
             new_taw = self._Kp * error + self._Ki * self._int + self._Kd * (error - self._diff)
             self._diff = error
-        logger.debug("alpha : %f" % alpha)
+        self._last_obs, r, d, info = self._env.step([new_taw])
+        # logger.debug("alpha : %f" % alpha)
         # logger.debug("alpha_dot : %f" % alpha_dot)
         # logger.debug("alpha_dotdot : %f" % alpha_dotdot)
-        logger.debug("KE : %f" % (KE))
+        # logger.debug("KE : %f" % (KE))
         # logger.debug("Inertia : %f" % (INR))
-        logger.debug("PE : %f" % (PE))
-        logger.debug("taw : %f" % new_taw)
-        logger.debug("------------------------------------------")
-        self._last_obs, r, d, info = self._env.step([new_taw])
-
-        info.update({"action": new_taw})
+        # logger.debug("PE : %f" % (PE))
+        # logger.debug("taw : %f" % new_taw)
+        # logger.debug("Reward : %f" % r)
+        # logger.debug("------------------------------------------")
+        
+        info.update({"error": error, "action": [new_taw]})
 
         return self._last_obs, r, d, info
 
 
-def do_experiment(pid_controller, Kp, Ki, Kd, exp_count=10):
+def do_experiment_theta(pid_controller, Kp, Ki, Kd, exp_count=10):
     avg_c_theta = 0.0
     for i in np.arange(exp_count):
         pid_controller.reset(Kp, Ki, Kd)
@@ -93,6 +98,26 @@ def do_experiment(pid_controller, Kp, Ki, Kd, exp_count=10):
             it += 1 
         avg_c_theta += c_theta
     return (avg_c_theta/float(exp_count))
+
+
+def do_experiment_error(pid_controller, Kp, Kd, Kps, Kmag, exp_count=10):
+    avg_error = 0.0
+    for i in np.arange(exp_count):
+        pid_controller.reset(Kp, Kd, Kps, Kmag=Kmag)
+        done = False
+        
+        c_error = 0.0
+        it = 0
+        while True:
+            obs, reward, done, info = pid_controller.step()
+            c_error += info["error"] ** 2
+            
+            if it >= 400:
+                break
+            
+            it += 1 
+        avg_error += c_error
+    return (avg_error/float(exp_count))
 
 
 def read_yaml_file(path):
