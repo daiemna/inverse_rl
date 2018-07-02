@@ -2,7 +2,7 @@ import numpy as np
 # from sklearn.model_selection import ParameterGrid
 import pandas as pd
 import matplotlib.pylab as plt
-# import time
+import time
 from pylogging import setup_logger, HandlerType
 from logging import getLogger, getLevelName
 from scripts.pid_pendulum import PendulumPID, do_experiment_error
@@ -19,9 +19,9 @@ def main():
     pid_controller = PendulumPID(1, 0, 0, target=target)
 
     def test_on_env(params):
-        return do_experiment_error(pid_controller, params[0], params[1], params[2], params[3])
+        return do_experiment_error(pid_controller, params[0], 0.0, params[1])
 
-    es = cma.CMAEvolutionStrategy([-5.0, -0.5, 0.2, 1.0], 1)
+    es = cma.CMAEvolutionStrategy([1.0, 0.0], 1)
     try:
         while not es.stop():
             solutions = es.ask()
@@ -42,7 +42,7 @@ MAX_ITERATIONS = 400
 
 
 def test_pid():
-    pid_cont = PendulumPID(-19.376, 6.872, 0.202, config_path="pid_constants.yml")
+    pid_cont = PendulumPID(2.0299, 0.0, -3.492, config_path="pid_constants.yml")
     while True:
         pid_cont.env.reset()
         done = False

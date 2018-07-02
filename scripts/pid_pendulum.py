@@ -1,7 +1,7 @@
 # from sandbox.rocky.tf.algos.trpo import TRPO
 from sandbox.rocky.tf.envs.base import TfEnv
 from rllab.envs.gym_env import GymEnv
-# from gym.envs.classic_control.pendulum import PendulumEnv
+from gym.envs.classic_control.pendulum import PendulumEnv
 import numpy as np
 import logging
 from ruamel.yaml import YAML
@@ -11,11 +11,11 @@ logger = logging.getLogger(__name__)
 
 class PendulumPID(object):
 
-    def __init__(self, Kp, Kd, Kp_swing, **kwargs):
-        self._env = TfEnv(GymEnv('Pendulum-v0',
-                                 record_video=kwargs.get("record_video", False),
-                                 record_log=kwargs.get("record_log", False)))
-        # self._env = PendulumEnv()
+    def __init__(self, Kp, Ki, Kd, **kwargs):
+        # self._env = TfEnv(GymEnv('Pendulum-v0',
+        #                          record_video=kwargs.get("record_video", False),
+        #                          record_log=kwargs.get("record_log", False)))
+        self._env = PendulumEnv()
         config_path = kwargs.get("config_path", None)
         config = {}
         if config_path is not None:
@@ -28,13 +28,14 @@ class PendulumPID(object):
         self._mass = kwargs.get("mass", config.get("mass", 1.0))
         self._g = kwargs.get("g_val", config.get("gravitation", 10.0))
         self._target = kwargs.get("target", config.get("target-angle", 0.0))
-
-        self.reset(Kp, Kd, Kp_swing)
+        self._taw_max = kwargs.get("taw_max", config.get("taw-max", 2.0))
+        # self.dt=.05
+        self.reset(Kp, Ki, Kd)
         print("PID init")
         
-    def reset(self, Kp, Kd, Kp_swing, Kmag=1.0):
-        self._int, self._diff, self._Ki = 0.0, 0.0, 0.0
-        self._Kp, self._Kd, self._Kp_swing = Kp, Kd, Kp_swing
+    def reset(self, Kp, Ki, Kd, Kmag=1.0):
+        self._int, self._diff, self._Kp_swing = 0.0, 0.0, 0.0
+        self._Kp, self._Ki, self._Kd = Kp, Ki, Kd
         self._Kmag = Kmag
         self._last_obs = self._env.reset()
         self._alpha_dot_prev = self._last_obs[2]
@@ -49,25 +50,33 @@ class PendulumPID(object):
         # alpha_dotdot = (alpha_dot - self._alpha_dot_prev)/self._dt
         self._alpha_dot_prev = alpha_dot
 
-        PE = self._mass * self._g * Ip * np.sin(alpha)
+        PE = self._mass * self._g * Ip * (1 - np.cos(alpha))
         KE = self._mass * alpha_dot**2 * self._length**2 * 0.5
         MAX_PE = self._mass * self._g * Ip
         # INR = self._mass * alpha_dotdot * Ip**2
         # Kp_swing = 0.02
 
-        if abs(alpha - self._target) > self._alpha_tol:  # swing up
+        # if abs(alpha - self._target) > self._alpha_tol:  # swing up
             # TODO: the units do not agree find a solution.
-            new_taw = self._Kp_swing * np.sign(alpha_dot) * (MAX_PE - PE)
+            # new_taw = self._Kp_swing * np.sign(alpha_dot) * (MAX_PE - PE)
             # new_taw = np.sign(alpha_dot) * (self._Kmag / (1 + np.exp(-self._Kp_swing * alpha)))
-            error = alpha
-        else:                                            # stabilization pid
-            error = np.sign(alpha_dot) * (KE + PE)
-            self._int += error
-            new_taw = self._Kp * error + self._Ki * self._int + self._Kd * (error - self._diff)
-            self._diff = error
+        #     error = alpha
+        # else:                                            # stabilization pid
+        error = (
+            self._taw_max
+            * np.sign(alpha_dot) * -np.sign(KE + PE) * np.sign(self._last_obs[0])
+            * (KE + PE) / (self._taw_max * np.abs(alpha_dot) * self._env.dt)
+        )
+        # if alpha > 2.0:
+        #     error = self._taw_max
+
+        self._int += error
+        new_taw = self._Kp * error + self._Ki * self._int + self._Kd * (error - self._diff)
+        self._diff = error
         self._last_obs, r, d, info = self._env.step([new_taw])
         # logger.debug("alpha : %f" % alpha)
         # logger.debug("alpha_dot : %f" % alpha_dot)
+        # logger.debug("obs : {}".format(self._last_obs))
         # logger.debug("alpha_dotdot : %f" % alpha_dotdot)
         # logger.debug("KE : %f" % (KE))
         # logger.debug("Inertia : %f" % (INR))
@@ -101,10 +110,10 @@ def do_experiment_theta(pid_controller, Kp, Ki, Kd, exp_count=10):
     return (avg_c_theta/float(exp_count))
 
 
-def do_experiment_error(pid_controller, Kp, Kd, Kps, Kmag, exp_count=10):
+def do_experiment_error(pid_controller, Kp, Ki, Kd, exp_count=10):
     avg_error = 0.0
     for i in np.arange(exp_count):
-        pid_controller.reset(Kp, Kd, Kps, Kmag=Kmag)
+        pid_controller.reset(Kp, Ki, Kd)
         done = False
         
         c_error = 0.0
@@ -116,7 +125,7 @@ def do_experiment_error(pid_controller, Kp, Kd, Kps, Kmag, exp_count=10):
             if it >= 400:
                 break
             
-            it += 1 
+            it += 1
         avg_error += c_error
     return (avg_error/float(exp_count))
 

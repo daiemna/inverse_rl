@@ -4,5 +4,5 @@ mass: 1
 length: 1.0
 gravitation: 10.0
 
-time-delta: 1.0
+time-delta: 0.05
 stablity-active-region: 0.5
