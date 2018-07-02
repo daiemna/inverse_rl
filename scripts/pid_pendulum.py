@@ -56,6 +56,7 @@ class PendulumPID(object):
         # Kp_swing = 0.02
 
         if abs(alpha - self._target) > self._alpha_tol:  # swing up
+            # TODO: the units do not agree find a solution.
             new_taw = self._Kp_swing * np.sign(alpha_dot) * (MAX_PE - PE)
             # new_taw = np.sign(alpha_dot) * (self._Kmag / (1 + np.exp(-self._Kp_swing * alpha)))
             error = alpha

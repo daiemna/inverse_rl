@@ -41,6 +41,21 @@ COL_NAMES = "state1,state2,state3,action,next_state1,next_state2,next_state3,rew
 MAX_ITERATIONS = 400
 
 
+def test_pid():
+    pid_cont = PendulumPID(-19.376, 6.872, 0.202, config_path="pid_constants.yml")
+    while True:
+        pid_cont.env.reset()
+        done = False
+        
+        creward = 1.0
+        for i in np.arange(0, MAX_ITERATIONS):
+            pid_cont.env.render()
+            obs, reward, done, info = pid_cont.step()
+            creward += reward
+            # time.sleep(0.3)
+        logger.info("cumulative reward: {0}".format(creward))
+
+
 def collect_pid_data():
     # TODO: action values are more than 2
     # sweet spot without Kmag: -19.376, 6.872, 0.202
@@ -90,4 +105,4 @@ def visualize_pid_data():
 if __name__ == "__main__":
     setup_logger(log_directory='./logs', file_handler_type=HandlerType.ROTATING_FILE_HANDLER, allow_console_logging=True, console_log_level="INFO")
 
-    visualize_pid_data()
+    test_pid()
