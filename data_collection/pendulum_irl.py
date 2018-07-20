@@ -10,6 +10,7 @@ from inverse_rl.algos.irl_trpo import IRLTRPO
 from inverse_rl.models.imitation_learning import AIRLStateAction
 from inverse_rl.utils.log_utils import rllab_logdir, load_latest_experts
 
+
 def main():
     env = TfEnv(GymEnv('Pendulum-v0', record_video=False, record_log=False))
     

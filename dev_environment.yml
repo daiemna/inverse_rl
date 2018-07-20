@@ -21,7 +21,7 @@ dependencies:
 - pygame
 - h5py
 - matplotlib
-- opencv3=3.1.0
+- opencv3==3.1.0
 - scikit-learn
 - pytorch==0.1.9
 - torchvision==0.1.6

@@ -4,7 +4,7 @@ from rllab.envs.gym_env import GymEnv
 # from gym.envs.classic_control.pendulum import PendulumEnv
 import numpy as np
 import logging
-from ruamel.yaml import YAML
+from .utils import read_yaml_file
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +32,9 @@ class PendulumPID(object):
         self.reset(Kp, Kd, Kp_swing)
         print("PID init")
         
-    def reset(self, Kp, Kd, Kp_swing, Kmag=1.0):
+    def reset(self, Kp, Kd, Kp_swing):
         self._int, self._diff, self._Ki = 0.0, 0.0, 0.0
         self._Kp, self._Kd, self._Kp_swing = Kp, Kd, Kp_swing
-        self._Kmag = Kmag
         self._last_obs = self._env.reset()
         self._alpha_dot_prev = self._last_obs[2]
     
@@ -66,16 +65,6 @@ class PendulumPID(object):
             new_taw = self._Kp * error + self._Ki * self._int + self._Kd * (error - self._diff)
             self._diff = error
         self._last_obs, r, d, info = self._env.step([new_taw])
-        # logger.debug("alpha : %f" % alpha)
-        # logger.debug("alpha_dot : %f" % alpha_dot)
-        # logger.debug("alpha_dotdot : %f" % alpha_dotdot)
-        # logger.debug("KE : %f" % (KE))
-        # logger.debug("Inertia : %f" % (INR))
-        # logger.debug("PE : %f" % (PE))
-        # logger.debug("taw : %f" % new_taw)
-        # logger.debug("Reward : %f" % r)
-        # logger.debug("------------------------------------------")
-        
         info.update({"error": error, "action": [new_taw]})
 
         return self._last_obs, r, d, info
@@ -101,10 +90,10 @@ def do_experiment_theta(pid_controller, Kp, Ki, Kd, exp_count=10):
     return (avg_c_theta/float(exp_count))
 
 
-def do_experiment_error(pid_controller, Kp, Kd, Kps, Kmag, exp_count=10):
+def do_experiment_error(pid_controller, Kp, Kd, Kps, exp_count=10, max_iterations=200):
     avg_error = 0.0
     for i in np.arange(exp_count):
-        pid_controller.reset(Kp, Kd, Kps, Kmag=Kmag)
+        pid_controller.reset(Kp, Kd, Kps)
         done = False
         
         c_error = 0.0
@@ -113,16 +102,9 @@ def do_experiment_error(pid_controller, Kp, Kd, Kps, Kmag, exp_count=10):
             obs, reward, done, info = pid_controller.step()
             c_error += info["error"] ** 2
             
-            if it >= 400:
+            if it >= max_iterations:
                 break
             
             it += 1 
         avg_error += c_error
     return (avg_error/float(exp_count))
-
-
-def read_yaml_file(path):
-    """Reads a yaml file."""
-    with open(path, 'r') as stream:
-        yml = YAML(typ='safe')
-        return yml.load(stream)
