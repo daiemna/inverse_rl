@@ -19,9 +19,9 @@ def main():
     pid_controller = PendulumPID(1, 0, 0, target=target)
 
     def test_on_env(params):
-        return do_experiment_error(pid_controller, params[0], 0.0, params[1])
+        return do_experiment_error(pid_controller, 1.0, params[0], params[1])
 
-    es = cma.CMAEvolutionStrategy([1.0, 0.0], 1)
+    es = cma.CMAEvolutionStrategy([0.00, -0.07], 1)
     try:
         while not es.stop():
             solutions = es.ask()
@@ -42,7 +42,7 @@ MAX_ITERATIONS = 400
 
 
 def test_pid():
-    pid_cont = PendulumPID(2.0299, 0.0, -3.492, config_path="pid_constants.yml")
+    pid_cont = PendulumPID(1.0, 2.6182, 2.3527, config_path="pid_constants.yml")
     while True:
         pid_cont.env.reset()
         done = False

@@ -94,7 +94,7 @@ class ImitationLearning(object, metaclass=Hyperparametrized):
     def _make_param_ops(self, vs):
         self._params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=vs.name)
         assert len(self._params) > 0
-        self._assign_plc = [tf.placeholder(tf.float32, shape=param.get_shape(), name='assign_%s' % param.name.replace('/','_').replace(':','_')) for param in self._params]
+        self._assign_plc = [tf.placeholder(tf.float32, shape=param.get_shape(), name='assign_%s' % param.name.replace('/', '_').replace(':', '_')) for param in self._params]
         self._assign_ops = [tf.assign(self._params[i], self._assign_plc[i]) for i in range(len(self._params))]
 
     def get_params(self):
@@ -129,7 +129,7 @@ class TrajectoryIRL(ImitationLearning):
                 agent_infos.append(infos)
             agent_infos_stack = tensor_utils.stack_tensor_dict_list(agent_infos)
             for key in agent_infos_stack:
-                agent_infos_stack[key] = np.transpose(agent_infos_stack[key], axes=[1,0,2])
+                agent_infos_stack[key] = np.transpose(agent_infos_stack[key], axes=[1, 0, 2])
             agent_infos_transpose = tensor_utils.split_tensor_dict_list(agent_infos_stack)
             for i, path in enumerate(expert_paths):
                 path['agent_infos'] = agent_infos_transpose[i]
