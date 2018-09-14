@@ -1,16 +1,18 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
-from argparse import ArgumentParser
-import numpy as np
-import pandas as pd
-import matplotlib.pylab as plt
-from pylogging import setup_logger, HandlerType
-from logging import getLogger
-from data_collection.pid_pendulum import PendulumPID, do_experiment_error
-import cma
+import datetime as dt
 import os
 import os.path as osp
-import datetime as dt
+from argparse import ArgumentParser
+from logging import getLogger
+
+import matplotlib.pylab as plt
+import numpy as np
+import pandas as pd
+from pylogging import HandlerType, setup_logger
+
+import cma
+from data_collection.pid_pendulum import PendulumPID, do_experiment_error
 from data_collection.utils import read_yaml_file
 
 logger = getLogger(__name__)
@@ -115,7 +117,7 @@ if __name__ == "__main__":
     parser.add_argument('--log-path', metavar='log_path', type=str, default="./logs",
                         help='log file location.')
     parser.add_argument('--collect-data', metavar='collect_data', type=bool, default=False,
-                        help='if true saves data of n tuned runs.')
+                        help='if true saves data of config.max-records tuned runs.')
     args = parser.parse_args()
 
     if args.debug:
@@ -139,4 +141,3 @@ if __name__ == "__main__":
         pass
     if config.get("collect-data", args.collect_data):
         collect_pid_data(config)
-    
