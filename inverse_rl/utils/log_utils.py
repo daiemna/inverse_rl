@@ -3,10 +3,12 @@ import random
 import joblib
 import json
 import contextlib
+import os.path as osp
 
 import rllab.misc.logger as rllablogger
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 
 from inverse_rl.utils.hyperparametrized import extract_hyperparams
 
@@ -85,3 +87,23 @@ def load_latest_experts_multiple_runs(logdir, n=5):
             print('Loading experts from %s' % dirname)
             paths.extend(load_latest_experts(dirname, n=n))
     return paths
+
+
+def load_pendlum_pid_experts_csv(data_dir, n=5):
+    files = [f for f in os.listdir(data_dir) if osp.isfile(osp.join(data_dir, f)) and f.endswith('.csv')]
+    files = files[:n]
+    state_var_names = 'state1,state2,state3'.split(',')
+    action_name = 'action'
+    trajectories = []
+    for file_name in files:
+        path = osp.join(data_dir, file_name)
+        # log.debug(osp.exists(path))
+        df = pd.read_csv(path)
+        
+        actions = df[action_name]
+        actions[actions > 2] = 2
+        actions[actions < -2] = -2
+        df[action_name] = actions
+        data_dict = dict(observations=df[state_var_names].values, actions=df[[action_name]].values)
+        trajectories.append(data_dict)
+    return trajectories
