@@ -16,7 +16,7 @@ pip_requirements = ["Pillow", "atari-py", "pyprind", "ipdb", "boto3", "PyOpenGL"
                     "git+https://github.com/neocxi/prettytensor.git", "jupyter", "progressbar2", "chainer==1.18.0", "https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow_gpu-1.0.1-cp35-cp35m-linux_x86_64.whl; 'linux' in sys_platform", "https://storage.googleapis.com/tensorflow/mac/gpu/tensorflow_gpu-1.0.1-py3-none-any.whl; sys_platform == 'darwin'",
                     "numpy-stl==2.2.0", "nibabel==2.1.0", "pylru==1.0.9", "hyperopt", "polling", 
                     "git+https://github.com/ansrivas/pylogging.git", "git+https://github.com/rll/rllab.git", 
-                    "git+https://github.com/DEAP/deap@master"]
+                    "git+https://github.com/DEAP/deap@master", "ruamel.yaml"]
 
 try:
     from pip._internal import main
