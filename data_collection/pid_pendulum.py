@@ -28,12 +28,12 @@ class PendulumPID(object):
         self._mass = kwargs.get("mass", config.get("mass", 1.0))
         self._g = kwargs.get("g_val", config.get("gravitation", 10.0))
         self._target = kwargs.get("target", config.get("target-angle", 0.0))
-
-        self.reset(Kp, Kd, Kp_swing)
+        
+        self.reset(Kp, Kd, Kp_swing, Ki=kwargs.get('Ki', 0.0))
         print("PID init")
         
-    def reset(self, Kp, Kd, Kp_swing):
-        self._int, self._diff, self._Ki = 0.0, 0.0, 0.0
+    def reset(self, Kp, Kd, Kp_swing, Ki=0.0):
+        self._int, self._diff, self._Ki = 0.0, 0.0, Ki
         self._Kp, self._Kd, self._Kp_swing = Kp, Kd, Kp_swing
         self._last_obs = self._env.reset()
         self._alpha_dot_prev = self._last_obs[2]
@@ -61,8 +61,9 @@ class PendulumPID(object):
             error = alpha
         else:                                            # stabilization pid
             error = np.sign(alpha_dot) * (KE + PE)
-            self._int += error
-            new_taw = self._Kp * error + self._Ki * self._int + self._Kd * (error - self._diff)
+            self._int += error * self._dt
+            _Cd = (error - self._diff) / self._dt if self._dt > 0 else 0
+            new_taw = self._Kp * error + self._Ki * self._int + self._Kd * _Cd
             self._diff = error
         self._last_obs, r, d, info = self._env.step([new_taw])
         info.update({"error": error, "action": [new_taw]})
@@ -90,10 +91,10 @@ def do_experiment_theta(pid_controller, Kp, Ki, Kd, exp_count=10):
     return (avg_c_theta/float(exp_count))
 
 
-def do_experiment_error(pid_controller, Kp, Kd, Kps, exp_count=10, max_iterations=200):
+def do_experiment_error(pid_controller, Kp, Kd, Kps, Ki=0.0, exp_count=10, max_iterations=200):
     avg_error = 0.0
     for i in np.arange(exp_count):
-        pid_controller.reset(Kp, Kd, Kps)
+        pid_controller.reset(Kp, Kd, Kps, Ki=Ki)
         done = False
         
         c_error = 0.0
@@ -108,3 +109,23 @@ def do_experiment_error(pid_controller, Kp, Kd, Kps, exp_count=10, max_iteration
             it += 1 
         avg_error += c_error
     return (avg_error/float(exp_count))
+
+
+def do_experiment_reward(Kp=1.0, Kd=1.0, Kps=1.0, gamma=0.99, pid_controller=None, exp_count=10, n=6, iters=200):
+    if pid_controller is None:
+        pid_controller = PendulumPID(Kp, Kd, Kps)
+    exp_data = np.zeros((exp_count,))
+    for k in range(exp_count):
+        avg_disc_reward = 0.0
+        for j in np.arange(n):
+            pid_controller._last_obs = pid_controller._env.reset()
+            done = False
+            
+            d_reward = 0.0
+            for i in range(iters):
+                obs, reward, done, info = pid_controller.step()
+                d_reward += reward * gamma ** (iters - i)
+                
+            avg_disc_reward += d_reward
+        exp_data[k] = avg_disc_reward/float(n)
+    return exp_data

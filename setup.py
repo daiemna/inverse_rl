@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 import traceback
 
-requirements = ["numpy==1.12.0", "scipy", "path.py", "python-dateutil", 
-                "joblib==0.10.3", "mako", "ipywidgets", "numba", "flask", 
+requirements = ["numpy", "scipy", "path.py", "python-dateutil", 
+                "joblib", "mako", "ipywidgets", "numba", "flask", 
                 "pygame", "h5py", "matplotlib", "opencv-python", "scikit-learn", "https://github.com/pytorch/pytorch/archive/v0.1.9.tar.gz",
-                "torchvision==0.1.6", "mpi4py", "pandas"]
+                "torchvision", "mpi4py", "pandas"]
 
 pip_requirements = ["Pillow", "atari-py", "pyprind", "ipdb", "boto3", "PyOpenGL", "nose2", 
                     "pyzmq", "tqdm", "msgpack-python", "git+https://github.com/inksci/mujoco-py-v0.5.7.git", 
@@ -21,7 +21,6 @@ pip_requirements = ["Pillow", "atari-py", "pyprind", "ipdb", "boto3", "PyOpenGL"
 try:
     from pip._internal import main
     main(['install'] + requirements + pip_requirements)
-    requirements = []
 except Exception:
     # Going to use easy_install for
     traceback.print_exc()
