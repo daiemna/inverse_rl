@@ -3,3 +3,10 @@ max-records: 1000
 save-dir: pid_recordings_200_iter/
 max-iterations: 200
 # collect-data: False
+best:
+  # - -24.13435447
+  - -24.134
+  # - 0.56288994
+  - 0.563
+  # - 0.18574515
+  - 0.202
