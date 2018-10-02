@@ -27,3 +27,4 @@ def register_custom_envs():
 
     register(id='VisualPointMaze-v0', entry_point='inverse_rl.envs.visual_pointmass:VisualPointMazeEnv',
              kwargs={'sparse_reward': False, 'direction': 1})
+    register(id='Acrobot-v2', entry_point='inverse_rl.envs.continuous_acrobot:AcrobotContinous')
