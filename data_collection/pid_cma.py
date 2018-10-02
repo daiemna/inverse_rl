@@ -27,9 +27,9 @@ def cma_tune(config):
     pid_controller = PendulumPID(1, 0, 0, Ki=0, config_path=config.get("pid-constants", None))
 
     def test_on_env(params):
-        return do_experiment_error(pid_controller, params[0], params[1], params[2], Ki=params[3], max_iterations=MAX_ITERATIONS)
+        return do_experiment_error(pid_controller, params[0], params[1], params[2], max_iterations=MAX_ITERATIONS)
 
-    es = cma.CMAEvolutionStrategy([-19.376, 6.872, 0.202, 1.0], 0.5)
+    es = cma.CMAEvolutionStrategy([-20.266, 7.00, 0.202], 1.0)
     try:
         while not es.stop():
             solutions = es.ask()
@@ -48,7 +48,7 @@ def cma_tune(config):
 
 def test_pid(config):
     # best param -19.376, 6.872, 0.202,
-    pid_cont = PendulumPID(config["best"][0], config["best"][1], config["best"][2], Ki=config["best"][3], config_path=config.get("pid-constants", None))
+    pid_cont = PendulumPID(config["best"][0], config["best"][1], config["best"][2], config_path=config.get("pid-constants", None))
     while True:
         pid_cont.env.reset()
         done = False
@@ -65,7 +65,10 @@ def test_pid(config):
 def collect_pid_data(config):
     # TODO: action values are more than 2
     # sweet spot without Kmag: -19.376, 6.872, 0.202
-    pid_cont = PendulumPID(config["best"][0], config["best"][1], config["best"][2], Ki=config["best"][3], config_path=config.get("pid-constants", None))
+    pid_cont = PendulumPID(config["best"][0], 
+                           config["best"][1], 
+                           config["best"][2], 
+                           config_path=config.get("pid-constants", None))
     record_count = 0
     
     if not osp.exists(SAVE_DIR):
@@ -112,6 +115,8 @@ if __name__ == "__main__":
     parser = ArgumentParser(description='Main Process.')
     parser.add_argument('--config-path', metavar='config_path', type=str,
                         help='path to config file.')
+    parser.add_argument('--test-only', metavar='test_only', type=bool, default=False,
+                        help='test the best params, default False.')
     parser.add_argument('--debug', metavar='debug', type=bool, default=True,
                         help='log level debug, default False.')
     parser.add_argument('--log-path', metavar='log_path', type=str, default="./logs",
@@ -132,7 +137,8 @@ if __name__ == "__main__":
     SAVE_DIR = config.get("save-dir", SAVE_DIR)
     MAX_ITERATIONS = config.get("max-iterations", MAX_ITERATIONS)
 
-    config["best"] = cma_tune(config)
+    if not args.test_only:
+        config["best"] = cma_tune(config)
     try:
         test_pid(config)
     except KeyboardInterrupt as e:
