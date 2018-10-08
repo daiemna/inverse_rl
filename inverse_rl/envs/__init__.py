@@ -28,3 +28,10 @@ def register_custom_envs():
     register(id='VisualPointMaze-v0', entry_point='inverse_rl.envs.visual_pointmass:VisualPointMazeEnv',
              kwargs={'sparse_reward': False, 'direction': 1})
     register(id='Acrobot-v2', entry_point='inverse_rl.envs.continuous_acrobot:AcrobotContinous')
+    register(id='Cartpole-v2', entry_point='inverse_rl.envs.continous_cartpole:ContinuosCartPoleEnv')
+    register(id='Cartpole-v3', entry_point='inverse_rl.envs.continous_cartpole:ContinuosCartPoleEnv',
+             kwargs={
+                 'random_stable_position': True
+             })
+    register(id='LunarLanderContinuous-v3',              
+             entry_point='inverse_rl.envs.lunar_lander_mod:LunarLanderMod')
