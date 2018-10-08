@@ -129,3 +129,20 @@ def do_experiment_reward(Kp=1.0, Kd=1.0, Kps=1.0, gamma=0.99, pid_controller=Non
             avg_disc_reward += d_reward
         exp_data[k] = avg_disc_reward/float(n)
     return exp_data
+
+def do_experiment_random(env, exp_count=10, n=6, iters=200):
+    exp_data = np.zeros((exp_count,))
+    for k in range(exp_count):
+        avg_disc_reward = 0.0
+        for j in np.arange(n):
+            # pid_controller._last_obs = pid_controller._env.reset()
+            env.reset()
+            done = False
+            d_reward = 0.0
+            for i in range(iters):
+                obs, reward, done, info = env.step()
+                d_reward += reward * gamma ** (iters - i)
+                
+            avg_disc_reward += d_reward
+        exp_data[k] = avg_disc_reward/float(n)
+    return exp_data

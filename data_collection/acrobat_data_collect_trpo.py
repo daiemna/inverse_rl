@@ -28,7 +28,7 @@ def main(exp_name, ent_wt=1.0):
         entropy_weight=ent_wt,
         baseline=LinearFeatureBaseline(env_spec=env)
     )
-    data_path = 'data/acrobat_data_rllab_trpo/%s/'%exp_name
+    data_path = 'data/acrobat_data_mode_reward_trpo/%s/'%exp_name
     os.makedirs(data_path, exist_ok=True)
     logger.set_snapshot_dir(data_path)
     algo.train()

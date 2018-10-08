@@ -7,13 +7,13 @@ from rllab.misc import logger as logger
 
 class AcrobotContinous(AcrobotEnv):
     discount_factor=0.95
+
     def __init__(self, max_episode_length=1000):
         AcrobotEnv.__init__(self)
         self._action_high=np.asarray([1.])
         self.action_space = spaces.Box(-self._action_high, self._action_high)
         self._max_episode_length = max_episode_length
-        self._time_step = 0
-        
+        self._time_step = 0    
     
     def _reset(self):
         self._time_step = 0
@@ -46,7 +46,8 @@ class AcrobotContinous(AcrobotEnv):
         ns[3] = bound(ns[3], -self.MAX_VEL_2, self.MAX_VEL_2)
         self.state = ns
         terminal = self._terminal()
-        reward = -1. if not terminal else 0.
+        # reward = 0 if not terminal else 1.
+        reward = -np.cos(s[0]) - np.cos(s[1] + s[0])
         self._time_step += 1
         terminal = True if terminal or self._time_step >= self._max_episode_length else False
         return (self._get_ob(), reward, terminal, {})
