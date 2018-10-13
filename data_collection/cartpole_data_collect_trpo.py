@@ -41,4 +41,5 @@ def main(exp_name, ent_wt=1.0):
 
 if __name__ == "__main__":
     # for i in range(4):
+    logging.getLogger(__name__).setLevel('INFO')
     main("exp_{}".format(1), ent_wt=1.0)   

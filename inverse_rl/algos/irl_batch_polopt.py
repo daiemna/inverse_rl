@@ -9,9 +9,10 @@ from sandbox.rocky.tf.samplers.batch_sampler import BatchSampler
 from sandbox.rocky.tf.samplers.vectorized_sampler import VectorizedSampler
 import numpy as np
 from collections import deque
-
+import logging
 from inverse_rl.utils.hyperparametrized import Hyperparametrized
 
+log = logging.getLogger(__name__)
 
 class IRLBatchPolopt(RLAlgorithm, metaclass=Hyperparametrized):
     """
@@ -157,10 +158,10 @@ class IRLBatchPolopt(RLAlgorithm, metaclass=Hyperparametrized):
             self.__irl_params = self.irl_model.get_params()
 
         probs = self.irl_model.eval(paths, gamma=self.discount, itr=itr)
-
-        logger.record_tabular('IRLRewardMean', np.mean(probs))
-        logger.record_tabular('IRLRewardMax', np.max(probs))
-        logger.record_tabular('IRLRewardMin', np.min(probs))
+        logger.log("probs : {}".format(probs[0].shape))
+        # logger.record_tabular('IRLRewardMean', np.mean(probs))
+        # logger.record_tabular('IRLRewardMax', np.max(probs))
+        # logger.record_tabular('IRLRewardMin', np.min(probs))
 
 
         if self.irl_model.score_trajectories:
@@ -188,9 +189,10 @@ class IRLBatchPolopt(RLAlgorithm, metaclass=Hyperparametrized):
             with logger.prefix('itr #%d | ' % itr):
                 logger.log("Obtaining samples...")
                 paths = self.obtain_samples(itr)
-
+                logger.log("path rewards shape: {}".format(paths[0]['rewards'].shape))
                 logger.log("Processing samples...")
                 paths = self.compute_irl(paths, itr=itr)
+                
                 returns.append(self.log_avg_returns(paths))
                 samples_data = self.process_samples(itr, paths)
 

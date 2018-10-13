@@ -8,6 +8,7 @@ from rllab.misc import logger
 import logging
 
 log = logging.getLogger(__name__)
+# log.setLevel('DEBUG')
 logger.print = log.debug
 
 
@@ -21,15 +22,23 @@ class ContinuosCartPoleEnv(CartPoleEnv):
         self._time_step = 0
         self._stable_x = None
         if random_stable_position:
-            self._rand_pos_max = self.x_threshold - 0.1
+            self._rand_pos_max = self.x_threshold - 0.4
             self._stable_x = np.random.uniform(-self._rand_pos_max, self._rand_pos_max)
+            # log.info("obs high : {}".format(self.observation_space.high))
+            oh = np.hstack((self.observation_space.high, np.asarray([self._rand_pos_max])))
+            self.observation_space = spaces.Box(-oh, oh)
+        log.debug("Action Space {}".format(self.action_space))
+        log.debug("Observations Space {}".format(self.observation_space))
         # else:       
 
     def _step(self, action):
         # assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
         action = np.clip(action, -self.action_high, self.action_high)
         state = self.state
-        x, x_dot, theta, theta_dot = state
+        if self._stable_x is not None:
+            x, x_dot, theta, theta_dot, _ = state
+        else:
+            x, x_dot, theta, theta_dot = state
         # force = self.force_mag if action==1 else -self.force_mag
         costheta = math.cos(theta)
         sintheta = math.sin(theta)
@@ -63,11 +72,18 @@ class ContinuosCartPoleEnv(CartPoleEnv):
             reward = 0.0
         if self._stable_x is not None:
             reward -= abs(x - self._stable_x)
+            self.state += (np.asarray([self._stable_x]),)
+        log.debug("state : {}".format(self.state))
         self._time_step += 1
-        return np.array(self.state), reward, done, {}
+        return np.asarray(self.state), reward, done, {}
     
     def _reset(self):
         self._time_step = 0
         if self._stable_x is not None:
+            self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(5,))
             self._stable_x = np.random.uniform(-self._rand_pos_max, self._rand_pos_max)
-        return CartPoleEnv._reset(self)
+            self.state[4] = self._stable_x
+        else:
+            self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
+        self.steps_beyond_done = None
+        return np.array(self.state)
