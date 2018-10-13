@@ -17,8 +17,8 @@ console.print = logging.debug
 
 def main(exp_name, ent_wt=1.0):
     register_custom_envs()
-    env_name = 'Cartpole-v3'
-    pickle_path = 'data/Cartpole_v3_data_rllab_TRPO/exp_1/itr_1200.pkl'
+    env_name = 'Pendulum-v0'
+    pickle_path = '../gpirl/notebooks/plots/rllab_trpo_trainig/itr_112.pkl'
     # pickle_path = 'data/acrobat_data_rllab_trpo/exp_1/itr_800.pkl'
     iter_data = joblib.load(pickle_path)
     env = GymEnv(env_name)
@@ -29,7 +29,6 @@ def main(exp_name, ent_wt=1.0):
         r_sum=0
         done=False
         i=0
-        print("stable point : {}".format(env.env._stable_x))
         while not done:
             env.render()
             a, _ = iter_data['policy'].get_action(o)
