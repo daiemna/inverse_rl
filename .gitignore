@@ -109,3 +109,4 @@ logs/
 .vscode/
 install_logs
 pid_recordings_200_iter.zip
+plots/
