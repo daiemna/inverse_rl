@@ -1,3 +1,7 @@
+# !/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Random balance point cart pole problem."""
 from gym.envs.classic_control.cartpole import CartPoleEnv
 from gym import spaces
 # from gym.utils import seeding

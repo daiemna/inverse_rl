@@ -1,7 +1,11 @@
-# from sandbox.rocky.tf.algos.trpo import TRPO
+# !/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Author: Daiem Nadir Ali
+
+"""PD-P controller class for Pendulum-v1."""
+
 from sandbox.rocky.tf.envs.base import TfEnv
 from rllab.envs.gym_env import GymEnv
-# from gym.envs.classic_control.pendulum import PendulumEnv
 import numpy as np
 import logging
 from .utils import read_yaml_file

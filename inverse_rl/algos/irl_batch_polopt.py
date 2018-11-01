@@ -123,6 +123,7 @@ class IRLBatchPolopt(RLAlgorithm, metaclass=Hyperparametrized):
         self.sampler.shutdown_worker()
 
     def obtain_samples(self, itr):
+        log.debug("env params : {}".format(self.sampler.algo.env.get_param_values()))
         return self.sampler.obtain_samples(itr)
 
     def process_samples(self, itr, paths):

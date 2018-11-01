@@ -1,3 +1,8 @@
+# !/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Author: Daiem Nadir Ali
+
+"""Utility functions."""
 from ruamel.yaml import YAML
 import logging
 

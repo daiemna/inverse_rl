@@ -1,5 +1,8 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
+# Author: Daiem Nadir Ali
+
+"""CMA-ES tuned PD-P controller for Pendulum-v1 task from OpenAI."""
 import datetime as dt
 import os
 import os.path as osp
