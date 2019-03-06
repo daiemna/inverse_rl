@@ -1,8 +1,4 @@
-# !/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Author: Daiem Nadir Ali
-"""Keybord based control for LunarLander-v2."""
-
+#!/usr/bin/env python
 from __future__ import print_function
 from inverse_rl.envs import register_custom_envs
 import sys, gym, time

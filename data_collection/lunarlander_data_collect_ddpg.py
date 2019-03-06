@@ -1,7 +1,7 @@
-from rllab.algos.ppo import PPO
-from rllab.policies.gaussian_mlp_policy import GaussianMLPPolicy
-# from rllab.baselines.linear_feature_baseline import LinearFeatureBaseline
-from rllab.baselines.gaussian_mlp_baseline import GaussianMLPBaseline
+from rllab.algos.ddpg import DDPG
+from rllab.policies.deterministic_mlp_policy import DeterministicMLPPolicy
+from rllab.exploration_strategies.ou_strategy import OUStrategy
+from rllab.q_functions.continuous_mlp_q_function import ContinuousMLPQFunction
 from rllab.envs.normalized_env import normalize
 from rllab.envs.gym_env import GymEnv
 from inverse_rl.envs import register_custom_envs
@@ -17,18 +17,26 @@ def main(exp_name, ent_wt=1.0):
     register_custom_envs()
     env_name = 'LunarLanderContinuous-v3'
     env = GymEnv(env_name)
-    policy = GaussianMLPPolicy(env_spec=env, hidden_sizes=(64, 64))
-    baseline = GaussianMLPBaseline(env_spec=env)
-    algo = PPO(
+    policy = DeterministicMLPPolicy(env_spec=env.spec, hidden_sizes=(64, 64))
+    es = OUStrategy(env_spec=env.spec)
+    qf = ContinuousMLPQFunction(env_spec=env.spec)
+
+    algo = DDPG(
         env=env,
         policy=policy,
-        n_itr=1500,
-        batch_size=8000,
-        max_path_length=1000,
+        es=es,
+        qf=qf,
+        batch_size=32,
+        max_path_length=350,
+        epoch_length=350,
+        min_pool_size=350,
+        n_epochs=600,
         discount=0.99,
-        store_paths=True,
-        entropy_weight=ent_wt,
-        baseline=baseline
+        scale_reward=1.0/140.0,
+        qf_learning_rate=1e-3,
+        policy_learning_rate=1e-4,
+        # Uncomment both lines (this and the plot parameter below) to enable plotting
+        # plot=True,
     )
     data_path = 'data/%s_data_rllab_%s/%s/'%(env_name.replace('-', '_'), 
                                              str(algo.__class__.__name__), 
